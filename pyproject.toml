@@ -22,4 +22,8 @@ polar = "mimyria.io:PolarIOFormat"
 
 [tool.setuptools]
 packages = ["mimyria"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+mimyria = ["models/**", "scripts/**"]
 
