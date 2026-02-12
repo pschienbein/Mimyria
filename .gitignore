@@ -1,0 +1,12 @@
+*.egg-info
+*.swp
+build/
+__pycache__
+*.bak
+*.gch
+worktrees
+compare-files.sh
+ankh
+compile_commands.json
+publish.sh
+pyenv

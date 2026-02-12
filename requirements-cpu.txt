@@ -1,0 +1,11 @@
+# Use the CPU wheels
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Torch
+torch==2.7.0
+torch-geometric==2.6.1
+torchaudio==2.7.0
+torchvision==0.22.0
+
+# This library
+-e .

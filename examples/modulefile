@@ -1,0 +1,12 @@
+#%Module
+#
+
+set root <DIR where you put mimyria>
+
+# Binaries C++
+prepend-path PATH $root/build/mimyria
+prepend-path LD_LIBRARY_PATH $root/build/libmimyria
+
+# C++ includes
+prepend-path CPATH $root/src
+prepend-path LIBRARY_PATH $root/build/libmimyria

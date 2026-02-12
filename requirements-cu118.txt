@@ -1,0 +1,11 @@
+# Use the CUDA 11.8 wheels
+--extra-index-url https://download.pytorch.org/whl/cu118
+
+# Torch
+torch==2.7.0
+torch-geometric==2.6.1
+torchaudio==2.7.0
+torchvision==0.22.0
+
+# This library
+-e .
