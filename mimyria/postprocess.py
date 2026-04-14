@@ -47,8 +47,9 @@ def calculate_apt_from_field(gradients, field_strength):
 
     # now dx contains [dFx/dEx, dFy/dEx, dFz/dEx]
     # now dy contains [dFx/dEy, dFy/dEy, dFz/dEy]
-    # now dz contains [dFx/dEz, dFy/dEz, dFz/dEz]
-    P = np.stack((dx, dy, dz), axis=-1)
+    # now dz contains [dFx/dEz, dFy/dEz, dFz/dEz] 
+    P = np.stack((dx, dy, dz), axis=-1).transpose(0, 2, 1)
+    # P contains [n, i, f]; correctly aligned to be multiplied by a velocity.
 
     return P
 

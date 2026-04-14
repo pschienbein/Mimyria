@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# NOTE: This file needs to be adjusted according to your HPC environment!
+
+#SBATCH --nodes=1 
+#SBATCH --time=10:00:00 
+#SBATCH --partition=gpu 
+#SBATCH --gpus=1
+
+source run.sh

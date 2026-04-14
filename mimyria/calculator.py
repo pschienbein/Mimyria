@@ -85,9 +85,11 @@ class CP2kBackend(Backend):
                  'pz': 'field_pz-frc-1.xyz',
                  'mx': 'field_mx-frc-1.xyz',
                  'my': 'field_my-frc-1.xyz',
-                 'mz': 'field_mz-frc-1.xyz',
-                 'pos': '../configurations.xyz'}
+                 'mz': 'field_mz-frc-1.xyz'
+                 }
         frames2write = []
+
+        pos_iter = iread(path + '/configurations.xyz')
 
         # check all the return codes
         nfailed = 0
@@ -107,7 +109,11 @@ class CP2kBackend(Backend):
                     apts = calculate_apt_from_field(atoms, 5e-4)
                     print(apts.shape)
 
-                    trajectory = atoms['pos']
+                    try:
+                        trajectory = next(pos_iter)
+                    except StopIteration:
+                        raise RuntimeError("configurations.xyz has less configurations than there are successful force calculations!")
+
                     # to store the data in the xyz file
                     # NOTE: this is row-major!
                     trajectory.arrays['apt'] = apt_flatten(apts)
@@ -206,8 +212,10 @@ class CP2kBackend(Backend):
                  'pypz': 'field_pypz-frc-1.xyz',
                  'mxmy': 'field_mxmy-frc-1.xyz',
                  'mxmz': 'field_mxmz-frc-1.xyz',
-                 'mymz': 'field_mymz-frc-1.xyz',
-                 'pos': '../configurations.xyz'}
+                 'mymz': 'field_mymz-frc-1.xyz'
+                 }
+
+        pos_iter = iread(path + '/configurations.xyz')
 
         frames2write = []
         
@@ -229,7 +237,10 @@ class CP2kBackend(Backend):
                     pgts = calculate_pgt_from_field(atoms, 5e-4)
                     print(pgts.shape)
 
-                    trajectory = atoms['pos']
+                    try:
+                        trajectory = next(pos_iter)
+                    except StopIteration:
+                        raise RuntimeError("configurations.xyz has less configurations than there are successful force calculations!")
                     # to store the data in the xyz file
                     # NOTE: this is row-major!
                     trajectory.arrays['pgt'] = pgt_flatten(pgts)

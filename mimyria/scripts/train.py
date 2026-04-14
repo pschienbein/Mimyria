@@ -14,6 +14,8 @@ from mimyria.models import model_from_target
 from mimyria.models.parameters import enum_type, EDataNormalization, get_default
 import mimyria.args as common_args
 
+from mimyria.io import open_wrapper
+
 
 def main(argv=None):
     # Start time
@@ -77,12 +79,13 @@ def main(argv=None):
     # print(cell)
 
     atom_kinds = set()
-    tdata = read(args.train, ':')
-    for atoms in tdata:
-        if atoms.cell is None or atoms.cell.volume < 1e-8:
-            atoms.set_cell(cell_loader.get())
+    with open_wrapper(args.train) as fin:
+        tdata = read(fin, ':', format=getattr(fin, 'ase_format'))
+        for atoms in tdata:
+            if atoms.cell is None or atoms.cell.volume < 1e-8:
+                atoms.set_cell(cell_loader.get())
 
-        atom_kinds.update(atoms.get_chemical_symbols())
+            atom_kinds.update(atoms.get_chemical_symbols())
 
     print('Detected atom symbols: ', atom_kinds)
 

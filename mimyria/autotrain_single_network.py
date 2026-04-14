@@ -166,6 +166,7 @@ touch FIN
     # this is just to avoid running the script twice at the same time
     if not os.path.exists(path + '/FIN'):
         print('Training process running, exiting....')
+        print(f'NOTE: If you want to restart the training, just remove the directory \"{path}\"')
         return False
 
     # check if the model has been created
@@ -208,7 +209,7 @@ def predict_full(state, cycle_no, bCont : bool = False):
     if not os.path.exists(path):
         os.makedirs(path)
     elif not bCont:
-        raise FileExistsError("Directory {path} is already existing")
+        raise FileExistsError(f"Directory {path} is already existing")
 
     # additional cmd arguments:
     cmd_predict = state_get_cmd_line(state, 'predict')
@@ -220,16 +221,31 @@ def predict_full(state, cycle_no, bCont : bool = False):
          open(path + '/filelist', 'w') as fout_flist:
 
         fout_run.write('''
-id=${SLURM_ARRAY_TASK_ID}
-cmd=$(sed -n "${id}p" command.list)
+if [[ -n "${SLURM_ARRAY_TASK_ID:-}" ]]; then
+  id=${SLURM_ARRAY_TASK_ID}
+  cmd=$(sed -n "${id}p" command.list)
 
-if [[ -z "${cmd// }" ]]; then
-  echo "No command found on line ${id}"
-  exit 1
+  if [[ -z "${cmd// }" ]]; then
+    echo "No command found on line ${id}"
+    exit 1
+  fi
+
+  echo "Running line ${id}: ${cmd}"
+  bash -c "${cmd}"
+else
+  id=0
+  while IFS= read -r cmd || [[ -n "$cmd" ]]; do
+    id=$((id + 1))
+
+    if [[ -z "${cmd// }" ]]; then
+      echo "Skipping empty line ${id}"
+      continue
+    fi
+
+    echo "Running line ${id}: ${cmd}"
+    bash -c "${cmd}"
+  done < command.list
 fi
-
-echo "Running ${cmd}"
-bash -lc "${cmd}"
         ''')
 
         cell_array = np.array(state['cell'])
@@ -254,12 +270,12 @@ bash -lc "${cmd}"
 
             if bInclude:
                 fout.write(f'mimyria-py predict --model ../training/model.mym --configs {infile} --cell {cell_arg} --out {target_fn} {cmd_predict}\n')
-                # fout.write('if [ $? -ne 0 ]; then exit; fi\n')
 
             # write this entry to the filelist
             fout_flist.write(f'{realpath}/{target_fn}')
             if 'velocities' in state:
                 vel_fn = state['velocities'][i]
+                vel_fn = os.path.realpath(vel_fn)
                 fout_flist.write(f', {vel_fn}')
 
                 if 'velocities_properties' in state:

@@ -12,7 +12,7 @@ import mimyria.args as common_args
 
 def main(argv=None):
     # Command line argument parser
-    parser = argparse.ArgumentParser(description='Script trains a new committee APT NN on given training data')
+    parser = argparse.ArgumentParser(description='Calculates APTs for all atoms present in --configs using spatial derivatives. Expects 6N frames containing Wannier centers (e.g. CP2k output).')
     parser.add_argument('--configs', type=str, required=True, help='Trajectory file containing the non-displaced atoms')
     parser.add_argument('--wannier', type=str, required=True, help='File containing the Wannier centers of the displaced atoms')
     parser.add_argument('--displacement', type=float, default=0.01, help='Displacement for the numerical derivative (default: 0.01 Angstrom)', required=False)

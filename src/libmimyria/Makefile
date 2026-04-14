@@ -15,7 +15,7 @@ ifeq ($(shell command -v $(PKG_CONFIG) > /dev/null 2>&1 && echo yes || echo no),
 
   #libzstd (optional)
   ifneq ($(shell $(PKG_CONFIG) --exists libzstd && echo yes), yes)
-    $(warning Optional Package 'liblzma' not found; reading of zstd trajectory files will be disabled)
+    $(warning Optional Package 'libzstd' not found; reading of zstd trajectory files will be disabled)
     CXXFLAGS += -DHAVE_ZSTD=0
   else 
     CXXFLAGS += $(shell $(PKG_CONFIG) --cflags libzstd) -DHAVE_ZSTD=1

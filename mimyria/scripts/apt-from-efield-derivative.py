@@ -4,17 +4,18 @@ import argparse
 from ase.io import iread, write
 
 from mimyria.postprocess import calculate_apt_from_field
+from mimyria.io import apt_flatten
 
 
 def main(argv=None):
     displacements = ['px', 'mx', 'py', 'my', 'pz', 'mz']
 
     # Command line argument parser
-    parser = argparse.ArgumentParser(description='Script trains a new committee APT NN on given training data')
+    parser = argparse.ArgumentParser(description='Calculates APTs for all atoms present in --pos using E field derivatives. Expects forces with E fields applied along + and - x,y,z (e.g. CP2k output)')
     parser.add_argument('--pos', type=str, required=True)
     parser.add_argument('--ftemplate', type=str, help='Allows to give a single file template to specify all efield files, for instance "field_{disp}-frc-1.xyz"')
     parser.add_argument('--field_strength', type=float, default=5e-4, help='Strength of the applied electric field (default: 5e-4 atomic units)', required=False)
-    parser.add_argument('--out', type=str, required=True)
+    parser.add_argument('--out', type=str, default='apt.xyz', help='Output file where to write the APTs (default: apt.xyz)')
 
     for d in displacements:
         dx = d.replace('p', '+').replace('m', '-')
@@ -45,8 +46,7 @@ def main(argv=None):
 
         trajectory = atoms['pos']
         # to store the data in the xyz file
-        # NOTE: this is row-major!
-        trajectory.arrays['apt'] = apts.reshape(len(apts), 9)
+        trajectory.arrays['apt'] = apt_flatten(apts)
         frames2write.append(trajectory)
 
         print(f'Processed frame {step}')

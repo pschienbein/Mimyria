@@ -49,6 +49,12 @@ public:
         const auto N = m_aData[0].size();
         vector<double> buffer(N);
 
+        if(N == 0)
+        {
+            cerr << "# Length of data series is 0 (no frames read), nothing to do...\n";
+            return;
+        }
+
         for(size_t k = 0; k < NumCC; ++k)
         {
             const size_t k1 = CCIndices[k].first;

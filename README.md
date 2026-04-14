@@ -47,6 +47,14 @@ Both layers are **fully independent** and can be installed and used separately; 
 An **example environment modulefile** is provided in the repository, which sets the required `PATH` and `LD_LIBRARY_PATH` entries to ensure that the compiled executables and libraries are found correctly. This is particularly useful on HPC systems using environment modules.
 
 After installation, the C++ layer of mimyria is callable via the command `mimyria`
+
+## Compression
+
+**Mimyria** supports _zstandard_ (`.zstd`, `.zst`) and _LZMA_ (`.xz`) compressed files. The use of compression is optional and can be disabled entirely. However, we strongly recommend using it—especially for large systems (many atoms) and/or long trajectories, where compression may become essential.
+
+In particular, _zstandard_ enables seamless on-the-fly compression during prediction and typically reduces file sizes to about 20% of their original size. While _LZMA_ generally achieves even higher compression ratios, it is significantly slower and can therefore slow down prediction when on-the-fly compression is used.
+
+The provided Makefile automatically detects whether the required development libraries (_libzstd_ and/or _libxz_) are available and enables or disables support accordingly, issuing a warning if they are not found. Since compression is optional (see above), missing these libraries does not cause the compilation to fail.
 ## Units
 
 While units are generally irrelevant for machine learning potentials, we have to make a choice to calculate absolute intensities and consistent Raman scattering lineshape functions.
@@ -56,7 +64,7 @@ All scripts that calculate and postprocess APTs and/or PGTs use the following co
 | ----------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------ |
 | velocity                                  | $Å$ $\text{fs}^{-1}$                      | Your favourite MD code                                                   |
 | force                                     | $E_h$ $a_0^{-1}$                          | Your favourite electronic structure code                                 |
-| electric field                            | $E_h$ $a_0^{-1}$$e^{-1}$                  | Your favourite electronic structure code                                 |
+| electric field                            | $E_h$ $a_0^{-1}$ $e^{-1}$                 | Your favourite electronic structure code                                 |
 | APT                                       | $e$                                       | *mimyria-py*:<br>apt-from-efield-derivative, apt-from-spatial-derivative |
 | $\lt \dot{M}(0) \dot{M}(t) \gt$           | $e^2$ $Å^2$ $\text{fs}^{-2}$              | *mimyria*:<br>apt2cf                                                     |
 | electric<br>polarizability                | $e^2$ $a_0^2$ $E_h^{-1}$                  |                                                                          |

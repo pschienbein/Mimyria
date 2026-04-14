@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mimyria"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
   'ase',
   'numpy',

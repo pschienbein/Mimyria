@@ -40,6 +40,12 @@ public:
         // now compute the correlation functions
         const auto N = m_aMdot[0].size();
 
+        if(N == 0)
+        {
+            cerr << "# Length of data series is 0 (no frames read), nothing to do...\n";
+            return;
+        }
+
         for(size_t k = 0; k < 3; ++k)
         {
             m_aadCorrFunc[k].commit(m_aMdot[k].data(), N);

@@ -10,3 +10,5 @@ ankh
 compile_commands.json
 publish.sh
 pyenv
+examples/data/
+src/mimyria/git_info.hpp

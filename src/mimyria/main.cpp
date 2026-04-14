@@ -15,6 +15,8 @@
 
 #include "box_loader.hpp"
 
+#include "git_info.hpp"
+
 using namespace std;
 
 void ReadingThreadFunc(TrajectoryPtr pTrajectory, shared_ptr<ThreadQueue<FramePtr>> pStorage)
@@ -71,6 +73,9 @@ void overwrite_dataset(library::Dataset<T>& ds, ConfigFilePtr pConfig, ConfigFil
 
 int main(int argc, char** argv)
 { 
+    // print header
+    cout << "This is mimyria, " << GIT_DESCRIBE << " (Commit " << GIT_COMMIT_SHORT << " @ " << GIT_BRANCH << " branch)\n";
+
     struct sigaction action; 
     action.sa_sigaction = [](int sig, siginfo_t*, void*){
         handleSegFault(sig);
@@ -90,7 +95,7 @@ int main(int argc, char** argv)
 
     try 
     {
-        cxxopts::Options options("SpectraNova", "Description");
+        cxxopts::Options options("mimyria", "Description");
 
         options.add_options()
             ("help", "Print this message and exit")

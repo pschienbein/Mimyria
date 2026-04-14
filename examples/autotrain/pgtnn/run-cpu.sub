@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# NOTE: This file needs to be adjusted according to your HPC environment!
+
+#SBATCH --time=168:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=16
+
+# NOTE: These environment variables need to be adjusted according to your HPC environment!
+export CP2K=cp2k.psmp
+export MPIRUN="mpirun -np ${SLURM_NTASKS}"
+
+source run.sh
+
+
+

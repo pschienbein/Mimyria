@@ -10,6 +10,8 @@ from ase.io import iread, write
 from mimyria.autotrain import state_yaml_create_empty_cycle
 import mimyria.args as common_args
 
+from mimyria.io import open_wrapper
+
 
 def main(argv=None):
     # Command line argument parser
@@ -134,16 +136,21 @@ def main(argv=None):
             cell = cell_loader.get()
             cells.append(cell.tolist())
 
-            for atoms in iread(traj_file):
-                total_seen += 1
-                if len(extracted_frames) < N:
-                    atoms.set_cell(cell)
-                    extracted_frames.append(atoms.copy())
-                else:
-                    r = random.randint(0, total_seen - 1)
-                    if r < N:
+            print(f'Reading {traj_file} ...', file=sys.stderr)
+
+            with open_wrapper(traj_file) as fin:
+                for atoms in iread(fin, format=getattr(fin, 'ase_format')):
+                    total_seen += 1
+                    if len(extracted_frames) < N:
                         atoms.set_cell(cell)
-                        extracted_frames[r] = atoms.copy()
+                        extracted_frames.append(atoms.copy())
+                    else:
+                        r = random.randint(0, total_seen - 1)
+                        if r < N:
+                            atoms.set_cell(cell)
+                            extracted_frames[r] = atoms.copy()
+
+            print(f'Finished reading {traj_file}', file=sys.stderr)
 
             cell_loader.next_traj()
 

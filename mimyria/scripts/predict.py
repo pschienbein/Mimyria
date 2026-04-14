@@ -49,7 +49,7 @@ def main(argv=None):
     with open_wrapper(args.configs) as fin, open_wrapper(args.out, 'w') as fout:
         buffer = []
 
-        for atoms in iread(fin):
+        for atoms in iread(fin, format=getattr(fin, 'ase_format')):
             if atoms.cell is None or atoms.cell.volume < 1e-8:
                 atoms.set_cell(cell_loader.get())
 

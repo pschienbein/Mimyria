@@ -56,6 +56,8 @@ def main(argv=None):
     with open('state.yaml', 'w') as f:
         yaml.safe_dump(state, f)
 
+    if bExit:
+        exit(1)
 
 if __name__ == "__main__":
     main()
