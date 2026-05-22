@@ -1,6 +1,11 @@
 # Mimyria
 
-Machine Learning Accelerated Theoretical Condensed-Phase Spectroscopy Made Simple
+<p align="center">
+  <img src="logo.png">
+</p>
+<p align="center">
+  Machine Learning Accelerated Theoretical Condensed-Phase Spectroscopy Made Simple
+</p>
 
 ## Introduction
 
@@ -9,7 +14,9 @@ Mimyria is intended as a **post-processing layer** and can be applied after the 
 
 Starting from existing MD trajectories—generated with an arbitrary ML or _ab initio_ potential—Mimyria automatically performs the required electronic structure calculations, trains ML models on the fly, and predicts IR and Raman spectra. For convenience, an _autotrain_ script is provided that takes existing trajectories as input and produces the final spectra with minimal user intervention.
 
-For a detailed description of capabilities, methodology, and best practices, please see the accompanying paper https://doi.org/10.48550/arXiv.2602.06760.
+For a detailed description of capabilities, methodology, and best practices, please see the accompanying paper [J. Chem. Theory Comput, 2026](https://doi.org/10.1021/acs.jctc.6c00245).
+
+See [CHANGELOG.md](CHANGELOG.md) for release history and notable changes.
 
 ## Installation
 

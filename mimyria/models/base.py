@@ -197,10 +197,40 @@ class BaseNetwork(ABC):
         lattice_vectors = torch.tensor(atoms.cell.array, device=self.device)
         lattice_vectors_inverse = torch.inverse(lattice_vectors)
 
-        frac = torch.einsum('ij,nj->ni', lattice_vectors_inverse, vd)
-        shift = torch.round(frac)
-        vd -= torch.einsum('ij,nj->ni', lattice_vectors, shift)
-        d = torch.einsum('ni,ni->n', vd, vd)
+        # test lattice vectors
+        G = lattice_vectors @ lattice_vectors.T
+        offdiag = G - torch.diag(torch.diagonal(G))
+
+        is_orthorhombic = torch.max(torch.abs(offdiag)) < 1e-10
+
+        if is_orthorhombic:
+            frac = vd @ lattice_vectors_inverse
+            shift = torch.round(frac)
+            vd -= shift @ lattice_vectors
+            d = torch.sum(vd * vd, dim=1)
+
+        else:
+            frac = vd @ lattice_vectors_inverse
+            base_shift = torch.round(frac)
+
+            offsets = torch.tensor(
+                [[i, j, k] for i in (-1, 0, 1)
+                          for j in (-1, 0, 1)
+                          for k in (-1, 0, 1)],
+                device=self.device,
+                dtype=vd.dtype,
+            )
+
+            candidate_shifts = base_shift[:, None, :] + offsets[None, :, :]
+
+            candidate_vd = vd[:, None, :] - candidate_shifts @ lattice_vectors
+            candidate_d = torch.sum(candidate_vd * candidate_vd, dim=-1)
+
+            best = torch.argmin(candidate_d, dim=1)
+            idx = torch.arange(vd.shape[0], device=self.device)
+
+            vd = candidate_vd[idx, best]
+            d = candidate_d[idx, best]
 
         mask = d < cutoff2
 

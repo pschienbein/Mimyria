@@ -12,3 +12,4 @@ publish.sh
 pyenv
 examples/data/
 src/mimyria/git_info.hpp
+mimyria/_version.py

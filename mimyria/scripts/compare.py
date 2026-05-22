@@ -79,7 +79,7 @@ def main(argv=None):
                 atomsA = atomsA[mask_keep]
                 atomsB = atomsB[mask_keep]
 
-                print(mask_keep)
+                # print(mask_keep)
 
             for i, symbol in enumerate(atomsA.get_chemical_symbols()):
                 tensorsA[symbol].append(propA[i])

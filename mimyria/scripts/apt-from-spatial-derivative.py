@@ -24,6 +24,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     ###############################################
+    charges = common_args.parse_charges(args.charges)
 
     cell = None
     if args.cell is not None:
@@ -45,7 +46,7 @@ def main(argv=None):
 
                 wanniers.append(atom_wanniers)
 
-            apts = calculate_apt_from_displacement(wanniers, args.displacement)
+            apts = calculate_apt_from_displacement(wanniers, args.displacement, charges)
             pos_frame.arrays['apt'] = apt_flatten(apts)
             write(fout, pos_frame, format='extxyz')
 

@@ -22,7 +22,7 @@ def cell(parser, required=True):
                         type=float,
                         nargs=9,
                         required=False,
-                        help='3x3 matrix describing the cell (only --cell_def global)')
+                        help='3x3 matrix [ax ay az bx by bz cx cy cz] describing the cell (only for --cell_def global)')
 
     parser.add_argument('--cellfn',
                         type=str,
@@ -74,3 +74,10 @@ class CellLoader:
 
             except StopIteration:
                 self.current_cell = None
+
+
+def parse_charges(args_charge_str):
+    return {
+        element: float(charge)
+        for element, charge in (item.split(":") for item in args_charge_str)
+    }

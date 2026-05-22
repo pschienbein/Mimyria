@@ -1,11 +1,15 @@
 from ase import Atoms
 from ase.utils.plugins import ExternalIOFormat
 
-from importlib.metadata import EntryPoint
-
 import numpy as np
 
 import io
+
+import tempfile
+import atexit
+import errno
+import sys
+import os
 from pathlib import Path
 
 import importlib
@@ -16,10 +20,70 @@ else:
     zstd = None
 
 
+_TEMP_FILES = set()
+
+
+def _register_tmp(path):
+    _TEMP_FILES.add(path)
+
+
+def _unregister_tmp(path):
+    _TEMP_FILES.discard(path)
+
+
+@atexit.register
+def _cleanup_tmp_files():
+    for path in list(_TEMP_FILES):
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+        except OSError:
+            pass
+
+
+# decompress to tmp file
+def _decompress_to_temp(path, opener):
+    last_exc = None
+
+    for tmp_dir in (None, os.getcwd()):
+        tmp_path = None
+
+        try:
+            tmp = tempfile.NamedTemporaryFile(delete=False, dir=tmp_dir)
+            tmp_path = tmp.name
+            tmp.close()
+
+            _register_tmp(tmp_path)
+
+            with opener(path, 'rb') as src, open(tmp_path, 'wb') as dst:
+                while True:
+                    chunk = src.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    dst.write(chunk)
+
+            return tmp_path
+
+        except OSError as exc:
+            last_exc = exc
+            is_no_space = exc.errno == errno.ENOSPC
+
+            # fallback to working dir
+            if tmp_dir is None and is_no_space:
+                continue
+
+            raise
+
+    raise last_exc
+
+
 # Wrapper to open a compressed file
 def open_wrapper(path, mode='rt'):
     suffixes = [s.lower() for s in Path(path).suffixes]
     suffix = suffixes[-1]
+
+    tmp_path = None
 
     if suffix == ".xz":
         if not importlib.util.find_spec('lzma'):
@@ -27,14 +91,8 @@ def open_wrapper(path, mode='rt'):
             raise ModuleNotFoundError('lzma module missing')
         import lzma
 
-        # default is inversed...
-        if 't' not in mode and 'b' not in mode:
-            mode += 't'
-
-        if 'b' in mode:
-            fh = lzma.open(path, mode)
-        else:
-            fh = lzma.open(path, mode, encoding='utf-8')
+        tmp_path = _decompress_to_temp(path, lzma.open)
+        fh = open(tmp_path, mode)
 
         del suffixes[-1]
 
@@ -45,11 +103,8 @@ def open_wrapper(path, mode='rt'):
         import pyzstd as zstd
 
         if 'r' in mode:
-            rdr = zstd.ZstdFile(path, 'r')
-            if 'b' in mode:
-                fh = rdr
-            else:
-                fh = io.TextIOWrapper(rdr, encoding='utf-8')
+            tmp_path = _decompress_to_temp(path, zstd.ZstdFile)
+            fh = open(tmp_path, mode)
 
         else:
             wtr = zstd.ZstdFile(path, mode)
@@ -63,6 +118,21 @@ def open_wrapper(path, mode='rt'):
     else:
         # just a 'default' file
         fh = open(path, mode)
+
+    # cleanup
+    if tmp_path is not None:
+        orig_close = fh.close
+
+        def _close_and_cleanup():
+            try:
+                orig_close()
+            finally:
+                try:
+                    os.unlink(tmp_path)
+                except FileNotFoundError:
+                    pass
+
+        fh.close = _close_and_cleanup
 
     # assign the ase_format to the opened stream
     ase_format = suffixes[-1].replace('.', '')
@@ -115,13 +185,6 @@ PolarIOFormat = ExternalIOFormat(
         module='mimyria.io',
         ext='polar'
         )
-
-
-#ep = EntryPoint(
-#        name='polar',
-#        value='mimyria.io:PolarIOFormat',
-#        group='ase.ioformats'
-#        )
 
 
 def read_polar(file, index=-1, **kwargs):

@@ -3,7 +3,6 @@
 #include "correlation.hpp"
 #include "exception.hpp"
 #include "factory.hpp"
-#include "fft.hpp"
 #include "frame.hpp"
 #include "library.hpp"
 #include "task.hpp"

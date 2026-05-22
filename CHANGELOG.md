@@ -1,0 +1,15 @@
+
+# Changelog
+
+## [0.9.2]
+
+### Added
+
+- Added **mimyria-py create-filelist** to conveniently create filelists as input for **mimyria**.
+
+### Fixed
+
+- Fixed extremely slow on-the-fly decompression of `.zst` and `.xz` files with ASE readers caused by frequent seek operations, which could dominate prediction runtime.
+- Printing the git commit version after installation with pip
+- Parsing charges in **mimyria-py apt_from_spatial_derivative**
+- Many cosmetics
