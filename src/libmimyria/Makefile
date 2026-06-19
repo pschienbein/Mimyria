@@ -49,7 +49,7 @@ LDFLAGS += -shared
 
 TARGET := $(BUILD_DIR)/libmimyria.so
 
-$(TARGET): $(OBJS) | $(BUILD_DIR)
+$(TARGET): mimyria_git_info.hpp $(OBJS) | $(BUILD_DIR)
 	$(CXX) $(LDFLAGS) -o $(TARGET) $(OBJS) $(LDLIBS)
 
 
@@ -66,9 +66,26 @@ $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
 
+mimyria_git_info.hpp: FORCE
+	@{\
+        echo '#pragma once'; \
+        echo ''; \
+        echo 'namespace libmimyria::git_info {'; \
+        echo ''; \
+        echo 'inline constexpr const char* commit_hash  = "'$$(git rev-parse HEAD 2>/dev/null || echo unknown)'";'; \
+        echo 'inline constexpr const char* commit_short = "'$$(git rev-parse --short HEAD 2>/dev/null || echo unknown)'";'; \
+        echo 'inline constexpr const char* branch       = "'$$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)'";'; \
+        echo 'inline constexpr const char* describe     = "'$$(git describe --tags --dirty --always 2>/dev/null || echo unknown)'";'; \
+		echo 'inline constexpr const char* banner = "This is mimyria, '$$(git describe --tags --dirty --always 2>/dev/null || echo unknown)' (Commit '$$(git rev-parse --short HEAD 2>/dev/null || echo unknown)' @ '$$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)' branch)";'; \
+        echo ''; \
+        echo '} // namespace libmimyria::git_info'; \
+	} > $@.tmp
+	@cmp -s $@.tmp $@ 2> /dev/null && rm -f $@.tmp || mv $@.tmp $@
+
+
 -include $(DEPS)
 
 clean:
 	rm -f $(OBJS) $(DEPS) $(TARGET) $(PCH_GCH)
 
-.PHONY: all clean
+.PHONY: all clean FORCE

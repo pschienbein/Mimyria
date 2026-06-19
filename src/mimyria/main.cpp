@@ -15,7 +15,7 @@
 
 #include "box_loader.hpp"
 
-#include "git_info.hpp"
+#include "mimyria_git_info.hpp"
 
 using namespace std;
 
@@ -74,7 +74,7 @@ void overwrite_dataset(library::Dataset<T>& ds, ConfigFilePtr pConfig, ConfigFil
 int main(int argc, char** argv)
 { 
     // print header
-    cout << "This is mimyria, " << GIT_DESCRIBE << " (Commit " << GIT_COMMIT_SHORT << " @ " << GIT_BRANCH << " branch)\n";
+    cout << libmimyria::git_info::banner << "\n";
 
     struct sigaction action; 
     action.sa_sigaction = [](int sig, siginfo_t*, void*){

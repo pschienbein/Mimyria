@@ -11,5 +11,5 @@ compile_commands.json
 publish.sh
 pyenv
 examples/data/
-src/mimyria/git_info.hpp
+src/libmimyria/mimyria_git_info.hpp
 mimyria/_version.py

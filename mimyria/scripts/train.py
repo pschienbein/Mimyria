@@ -87,6 +87,7 @@ def main(argv=None):
 
             atom_kinds.update(atoms.get_chemical_symbols())
 
+    atom_kinds = sorted(atom_kinds)
     print('Detected atom symbols: ', atom_kinds)
 
     # param = ModelParameters(atom_kinds=list(atom_kinds))

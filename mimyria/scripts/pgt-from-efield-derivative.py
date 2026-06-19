@@ -4,7 +4,7 @@ import argparse
 from ase.io import iread, write
 
 from mimyria.postprocess import calculate_pgt_from_field
-from mimyria.io import pgt_flatten
+from mimyria.io import open_wrapper, pgt_flatten
 
 
 def main(argv=None):
@@ -22,8 +22,12 @@ def main(argv=None):
         "'component': apply field_strength to each Cartesian component (default). "
         "'normalized': normalize the field direction first, so the total field "
         "magnitude equals field_strength."
+    ))
+    parser.add_argument('--enforce_force_sum_rule',
+        action='store_true',
+        help='Prints additional memory and timing information at each step'
     )
-)
+
     parser.add_argument('--out', type=str, required=True)
 
     for d in displacements:
@@ -46,7 +50,15 @@ def main(argv=None):
         for d in displacements:
             files[d] = getattr(args, f'f{d}')
 
-    iterators = {key: iread(path) for key, path in files.items()}
+    streams = {
+        key: open_wrapper(path)
+        for key, path in files.items()
+    }
+
+    iterators = {
+        key: iread(fin, format=getattr(fin, 'ase_format'))
+        for key, fin in streams.items()
+    }
 
     frames2write = []
     for step, frames in enumerate(zip(*iterators.values())):
@@ -57,7 +69,11 @@ def main(argv=None):
         # convert to e^2 a_0^2 / (Eh * Angstrom) instead by convention,
         # since when multiplying by the velocity
         # (Angstrom / fs), alpha is directly obtained in atomic units.
-        pgts = calculate_pgt_from_field(atoms, args.field_strength, normalized_field) * 1.88973
+        pgts = calculate_pgt_from_field(atoms,
+                                        args.field_strength,
+                                        normalized_field,
+                                        args.enforce_force_sum_rule,
+                                        ) * 1.88973
         print(pgts.shape)
 
         trajectory = atoms['pos']

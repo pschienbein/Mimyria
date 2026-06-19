@@ -91,7 +91,8 @@ def calculate_apt_from_displacement(wanniers, displacement, _charges=dict()):
 #      (see pgt-from-spatial-derivative.py)
 def calculate_pgt_from_field(gradients,
                              field_strength,
-                             normalized_field=False):
+                             normalized_field=False,
+                             enforce_force_sum_rule=False):
     forces = dict()
     for item in gradients:
         if 'forces' in gradients[item].arrays:
@@ -101,6 +102,15 @@ def calculate_pgt_from_field(gradients,
             # this happens regularly if a CP2k force file is read,
             # which does not contain positions
             forces[item] = gradients[item].positions
+
+        if enforce_force_sum_rule and item != "pos":
+            fx, fy, fz = forces[item].sum(axis=0)
+            print(f"Force sum BEFORE CORRECTION for {item}: ({fx:.4e}, {fy:.4e}, {fz:.4e})")
+
+            n_atoms = len(forces[item])
+            correction = np.array([fx, fy, fz]) / n_atoms
+
+            forces[item] -= correction
 
     px, py, pz = forces['px'], forces['py'], forces['pz']
     mx, my, mz = forces['mx'], forces['my'], forces['mz']

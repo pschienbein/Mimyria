@@ -6,6 +6,33 @@ import re
 import numpy as np
 
 
+def load_file(fn):
+    comments = []
+    col_info_line = None
+
+    try:
+        with open(fn) as fin:
+            # leading comments
+            for line in fin:
+                if line.lstrip().startswith('#'):
+                    comment = line.rstrip('\n')
+
+                    if 'Time' in comment:
+                        col_info_line = comment
+                    else:
+                        comments.append(comment)
+
+                else:
+                    break
+
+            data = np.loadtxt(fn)
+
+            return data, comments, col_info_line
+    except FileNotFoundError:
+        print(f'ERROR: Could not open file "{fn}"')
+        exit(1)
+
+
 def load_data(input_file, expected):
     # create an array [spectrum_id (CCA)][geometry][time]
     data = []
@@ -13,14 +40,7 @@ def load_data(input_file, expected):
 
     # is it a single file?
     if '{}' not in input_file:
-        # load all from this file, first get the comment
-        with open(input_file) as fin:
-            for line in fin:
-                if line.lstrip().startswith('#'):
-                    if 'Time' in line:
-                        col_info_line = line.rstrip('\n')
-                else:
-                    break
+        this_data, comments, col_info_line = load_file(input_file)
 
         aCols = col_info_line.split('|')
         col2idx = {}
@@ -38,7 +58,7 @@ def load_data(input_file, expected):
                 exit(1)
 
         # now load the data
-        this_data = np.loadtxt(input_file)
+        # this_data = np.loadtxt(input_file)
 
         time_series = this_data[:, 0]
 
@@ -50,41 +70,35 @@ def load_data(input_file, expected):
     else:
         num_spectra = 0
         for geo in expected:
-            # try to open the file
-            try:
-                fn = input_file.format(geo)
-                this_data = np.loadtxt(fn)
+            fn = input_file.format(geo)
+            this_data, comments, _ = load_file(fn)
 
-                # extract number of spectra and consistency check
-                this_num_spectra = this_data.shape[1] - 1
-                if this_num_spectra != num_spectra and num_spectra != 0:
-                    print(f'ERROR: Number of spectra in {fn} is inconsistent to the previously loaded files')
-                    exit(1)
-                num_spectra = this_num_spectra
-
-                # store time series
-                if time_series is None:
-                    time_series = this_data[:, 0]
-                else:
-                    # check if it's consistency
-                    if not np.all(time_series == this_data[:, 0]):
-                        print(f'ERROR: Times stored in {fn} are inconsistent to the previously loaded files')
-                        exit(1)
-
-                # array not initialized?
-                if len(data) == 0:
-                    for iSpec in range(num_spectra):
-                        data.append({})
-
-                # append this data to the array:
-                for iSpec in range(num_spectra):
-                    data[iSpec][geo] = this_data[:, iSpec + 1]
-
-            except FileNotFoundError:
-                print(f'ERROR: Expecting correlation function in direction {exp}, but the file {fn} could not be opened')
+            # extract number of spectra and consistency check
+            this_num_spectra = this_data.shape[1] - 1
+            if this_num_spectra != num_spectra and num_spectra != 0:
+                print(f'ERROR: Number of spectra in {fn} is inconsistent to the previously loaded files')
                 exit(1)
+            num_spectra = this_num_spectra
 
-    return time_series, data
+            # store time series
+            if time_series is None:
+                time_series = this_data[:, 0]
+            else:
+                # check if it's consistency
+                if not np.all(time_series == this_data[:, 0]):
+                    print(f'ERROR: Times stored in {fn} are inconsistent to the previously loaded files')
+                    exit(1)
+
+            # array not initialized?
+            if len(data) == 0:
+                for iSpec in range(num_spectra):
+                    data.append({})
+
+            # append this data to the array:
+            for iSpec in range(num_spectra):
+                data[iSpec][geo] = this_data[:, iSpec + 1]
+
+    return time_series, data, comments
 
 
 def main(argv=None):
@@ -102,7 +116,8 @@ def main(argv=None):
         expecting = ['x', 'y', 'z']
 
         # read in correlation functions
-        times, data = load_data(args.inp, expecting)
+        times, data, comments = load_data(args.inp, expecting)
+        header_text = '\n'.join(comments)
         print(times.shape)
         print(len(data))
 
@@ -117,12 +132,18 @@ def main(argv=None):
             result.append(iso)
 
         arr = np.array(result).T
-        np.savetxt(args.out, arr, fmt='%.6e')
+
+        np.savetxt(args.out,
+                   arr,
+                   fmt='%.6e',
+                   header=header_text,
+                   comments="")
 
     elif args.spectrum_kind == 'raman':
         expecting = ['xx', 'yy', 'zz', 'xy', 'xz', 'yz', 'xxyy', 'yyzz', 'xxzz']
 
-        times, data = load_data(args.inp, expecting)
+        times, data, comments = load_data(args.inp, expecting)
+        header_text = '\n'.join(comments)
 
         result = {'iso': [times], 'aniso': [times], 'vv': [times], 'vh': [times]}
 
@@ -139,17 +160,22 @@ def main(argv=None):
 
             vv = iso + 4.0 * vh / 3.0
 
-            aniso = vh / 15.0
+            aniso = vh * 15.0
 
             result['iso'].append(iso)
             result['aniso'].append(aniso)
             result['vv'].append(vv)
             result['vh'].append(vh)
-     
+
         if "{}" in args.out:
             for key in result:
                 arr = np.array(result[key]).T
-                np.savetxt(args.out.format(key), arr, fmt='%.6e')
+                # np.savetxt(args.out.format(key), arr, fmt='%.6e')
+                np.savetxt(args.out.format(key),
+                           arr,
+                           fmt='%.6e',
+                           header=header_text,
+                           comments="")
 
         else:
             # ONLY a single spectrum
@@ -161,7 +187,12 @@ def main(argv=None):
 
                 arr = np.column_stack((times, iso, aniso, vv, vh))
                 header = '# Time | ISO | ANISO | VV | VH'
-                np.savetxt(args.out, arr, fmt='%.6e', header=header)
+                # np.savetxt(args.out, arr, fmt='%.6e', header=header)
+                np.savetxt(args.out,
+                           arr,
+                           fmt='%.6e',
+                           header=header_text,
+                           comments="")
 
             else:
                 print('# isotropic spectra should be written in different files '

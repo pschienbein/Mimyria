@@ -1,6 +1,19 @@
 
 # Changelog
 
+## Current
+
+### Added
+
+- Added *--enforce_force_sum_rule* option for *pgt-from-efield-derivative* script.
+- *pgt-from-efield-derivative* script can now also process compressed trajectory files.
+- Rewrote *spectrum-isotropic-averages* script to preserve comments.
+
+### Fixed
+
+- Now correctly shipping the cp2k templates file for non-editable python installations.
+- Fixed printing the correct git information string when HPC nodes don't have git installed.
+
 ## [0.9.2]
 
 ### Added

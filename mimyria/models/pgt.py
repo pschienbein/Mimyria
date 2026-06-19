@@ -38,6 +38,7 @@ class PGTNetwork(PerAtomBaseNetwork):
     # y_pred is the prediction
     # y_ref is the true reference data
     def get_loss(self, y_pred, y_ref):
+        # Naive Loss:
         return ((y_pred - y_ref)**2).mean()
 
     # returns the target property/ies for the given configuration stored in atoms

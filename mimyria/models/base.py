@@ -6,6 +6,7 @@ import itertools
 from collections import defaultdict
 import zipfile
 import json
+import warnings
 
 import torch
 
@@ -210,6 +211,8 @@ class BaseNetwork(ABC):
             d = torch.sum(vd * vd, dim=1)
 
         else:
+            warnings.warn('Non-orthorhombic boxes are largely experimental!')
+
             frac = vd @ lattice_vectors_inverse
             base_shift = torch.round(frac)
 
@@ -402,7 +405,7 @@ class BaseNetwork(ABC):
 
         # learning curve per irrep:
         if bLCPerIrrep:
-            ofslog_irrep.write('# All loss reported in internal space')
+            ofslog_irrep.write('# All loss reported in internal space\n')
             ofslog_irrep.write('# Epoch | ')
             for stage in ['Train', 'Test']:
                 for blk in self.irrep_blocks:

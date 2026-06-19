@@ -12,14 +12,49 @@ import mimyria.args as common_args
 from mimyria.io import atoms_arrays_reshape, open_wrapper
 
 
+# format helpers
+def fmt_comp(idx, irrep_blocks=None):
+    if irrep_blocks is None:
+        return "[" + ",".join(map(str, idx)) + "]"
+
+    k = idx[0]
+
+    for blk in irrep_blocks:
+        sl = blk['sl']
+        if sl.start <= k < sl.stop:
+            m = k - sl.start
+            return f"{blk['name']}[{m}]"
+
+    return "[{k}]"
+
+
+def compute_std_for_irreps(tensors, irrep_blocks):
+    tensors = np.asarray(tensors)
+    std = np.zeros(tensors.shape[1], dtype=tensors.dtype)
+
+    for blk in irrep_blocks:
+        sl = blk['sl']
+        block = tensors[:, sl]
+        std_blk = np.sqrt(np.mean(block**2))
+        std[sl] = std_blk
+
+    return std
+
+
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='Compare two files containing APTs and provide the rmse')
+    parser = argparse.ArgumentParser(description='Compare two files containing APTs or PGTs and provide the rmse')
     parser.add_argument('--confA', type=str, required=True)
     parser.add_argument('--confB', type=str, required=True)
     common_args.target(parser, default='apt')
     parser.add_argument('--out', type=str, default=None, help='Output file for Bias, RMSE, and normalized RMSE (default: STDOUT)')
     parser.add_argument('--scatterout', type=str, default='scatter-{symbol}.dat', help='Output file name, comparing the DFT and NN APTs componentwise (default: scatter-{symbol}.dat)')
     parser.add_argument('--ignore_zeros', action='store_true', default=False, help='Ignore all APTs/PGTs which are strictly zero; helpful when not all atoms have been displaced for benchmarking')
+    parser.add_argument(
+        '--compare_irreps',
+        action='store_true',
+        default=False,
+        help='Transforms all tensors to their irreducible representation before comparison'
+        )
 
     args = parser.parse_args(argv)
 
@@ -31,6 +66,12 @@ def main(argv=None):
         sys.stdout = open(args.out, 'w')
 
     target = args.target
+
+    # Irreps?
+    cmp_irreps_mdl = None
+#    if args.compare_irreps:
+#        param = get_default(args.target, atom_kinds=list(atom_kinds))
+#        mdl = model_from_target(args.target, device='cpu', model_parameters=param)
 
     print(f'Comparing {target}', file=sys.stderr)
 
@@ -66,8 +107,31 @@ def main(argv=None):
             atoms_arrays_reshape(atomsA)
             atoms_arrays_reshape(atomsB)
 
-            propA = atomsA.arrays[target]
-            propB = atomsB.arrays[target]
+            # Irreps?
+            if args.compare_irreps:
+                import torch
+                if cmp_irreps_mdl is None:
+                    # Lazy initialization...
+                    from mimyria.models import model_from_target
+                    from mimyria.models.parameters import get_default
+                    atom_kinds = set(atomsA.get_chemical_symbols())
+                    param = get_default(args.target, atom_kinds=list(atom_kinds))
+                    cmp_irreps_mdl = model_from_target(args.target, device='cpu', model_parameters=param)
+
+                # transform cartesian coordinates to irreps:
+                y = cmp_irreps_mdl.get_target(atomsA)
+                propA = torch.einsum(cmp_irreps_mdl.einsum_forward,
+                                     cmp_irreps_mdl.change_of_basis,
+                                     y).numpy()
+
+                y = cmp_irreps_mdl.get_target(atomsB)
+                propB = torch.einsum(cmp_irreps_mdl.einsum_forward,
+                                     cmp_irreps_mdl.change_of_basis,
+                                     y).numpy()
+
+            else:
+                propA = atomsA.arrays[target]
+                propB = atomsB.arrays[target]
 
             if args.ignore_zeros:
                 maskA = np.all(propA == 0, axis=tuple(range(1, propA.ndim)))
@@ -98,8 +162,12 @@ def main(argv=None):
             B = np.array(tensorsB[sym])
             diff = A - B
 
-            # use standard deviation
-            std = np.std(B, axis=0)
+            if args.compare_irreps:
+                std = compute_std_for_irreps(B, cmp_irreps_mdl.irrep_blocks)
+                print(std)
+            else:
+                std = np.std(B, axis=0)
+
             # check if zero
             if np.any(std < 1e-14):
                 print('# [warn]: Standard deviation is close to zero!', file=sys.stderr)
@@ -115,9 +183,6 @@ def main(argv=None):
             metrics[sym]['rel_rmse'] = rmse / std
 
         # print all
-        # format helpers
-        def fmt_comp(idx):
-            return "[" + ",".join(map(str, idx)) + "]"
 
         header = ("# Columns: symbol, component, n, bias, rel_bias, rmse, rel_rmse\n"
                   "# bias, rmse in property units; rel_bias, rel_rmse normalized by standard deviation of --confB\n"
@@ -155,7 +220,7 @@ def main(argv=None):
                 rr = float(arr_rel_rmse[comp])
                 R2 = 1 - rr**2
                 arr_R2.append(R2)
-                print(f"{sym:>6s} {fmt_comp(comp):>8s} "
+                print(f"{sym:>6s} {fmt_comp(comp, cmp_irreps_mdl.irrep_blocks if args.compare_irreps else None):>8s} "
                       f"{b:12.6f} {rb:12.6f} {r:12.6f} {rr:12.6f} {R2:12.6f}")
 
             # symbol averages (macro mean over components)

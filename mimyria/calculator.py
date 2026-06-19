@@ -1,7 +1,9 @@
 
 import os
-from pathlib import Path
 import shutil
+
+from pathlib import Path
+from importlib.resources import files as importlib_files
 
 from mimyria.autotrain import submit_job, is_job_running_in_path, get_job_exit_code_in_path
 from mimyria.postprocess import calculate_apt_from_field, calculate_pgt_from_field
@@ -60,7 +62,13 @@ class CP2kBackend(Backend):
             self.apt_check_force_eval()
 
             # copy the cp2k tamplate over, if it doesn't exist ye
-            src = Path(__file__).resolve().parent.parent / 'templates' / 'cp2k' / 'apt-from-field'
+            try:
+                src = importlib_files('mimyria') / 'templates' / 'cp2k' / 'apt-from-field'
+                if not src.exists():
+                    raise FileNotFoundError
+            except Exception: 
+                # source tree layout if installed in editable mode
+                src = Path(__file__).resolve().parent.parent / 'templates' / 'cp2k' / 'apt-from-field'
             dst = Path(path)
 
             shutil.copytree(src, dst, symlinks=True, dirs_exist_ok=True)
@@ -182,7 +190,13 @@ class CP2kBackend(Backend):
             self.pgt_check_force_eval()
 
             # copy the cp2k tamplate over, if it doesn't exist ye
-            src = Path(__file__).resolve().parent.parent / 'templates' / 'cp2k' / 'pgt-from-field'
+            try:
+                src = importlib_files('mimyria') / 'templates' / 'cp2k' / 'pgt-from-field'
+                if not src.exists():
+                    raise FileNotFoundError
+            except Exception:
+                # source tree layout if installed in editable mode
+                src = Path(__file__).resolve().parent.parent / 'templates' / 'cp2k' / 'pgt-from-field'
             dst = Path(path)
 
             shutil.copytree(src, dst, symlinks=True, dirs_exist_ok=True)

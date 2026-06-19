@@ -24,7 +24,7 @@ packages = ["mimyria"]
 include-package-data = true
 
 [tool.setuptools.package-data]
-mimyria = ["models/**", "scripts/**"]
+mimyria = ["models/**", "scripts/**", "templates/**"]
 
 [tool.setuptools_scm]
 version_file = "mimyria/_version.py"

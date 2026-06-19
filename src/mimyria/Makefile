@@ -19,7 +19,7 @@ override LDLIBS += -lfftw3_omp -lfftw3 -ldl
 
 TARGET := $(BUILD_DIR)/mimyria
 
-$(TARGET): git_info.hpp $(OBJS) | $(BUILD_DIR)
+$(TARGET): $(OBJS) | $(BUILD_DIR)
 	$(CXX) $(LDFLAGS) -o $(TARGET) $(OBJS) $(LDLIBS)
 
 
@@ -34,17 +34,6 @@ $(PCH_GCH): $(PCH) | $(BUILD_DIR)
 
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
-
-
-git_info.hpp: FORCE
-	@{\
-		echo '#pragma once'; \
-		echo '#define GIT_COMMIT_HASH "'$$(git rev-parse HEAD 2> /dev/null || echo unknown)'"'; \
-		echo '#define GIT_COMMIT_SHORT "'$$(git rev-parse --short HEAD 2> /dev/null || echo unknown)'"'; \
-		echo '#define GIT_BRANCH "'$$(git rev-parse --abbrev-ref HEAD 2> /dev/null || echo unknown)'"'; \
-		echo '#define GIT_DESCRIBE "'$$(git describe --tags --dirty --always 2> /dev/null || echo unknown)'"'; \
-	} > $@.tmp
-	@cmp -s $@.tmp $@ 2> /dev/null && rm -f $@.tmp || mv $@.tmp $@
 
 
 -include $(DEPS)
