@@ -1,13 +1,15 @@
 
 # Changelog
 
-## Current
+## [0.9.4]
 
 ### Added
 
 - Added *--enforce_force_sum_rule* option for *pgt-from-efield-derivative* script.
 - *pgt-from-efield-derivative* script can now also process compressed trajectory files.
 - Rewrote *spectrum-isotropic-averages* script to preserve comments.
+- Updated input file templates for newest version of CP2k (&REFTRAJ EVAL ENERGY_FORCES)
+- Added support for custom atom symbol labels, such as Co2, Fe3, ...
 
 ### Fixed
 

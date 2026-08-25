@@ -4,13 +4,13 @@ from ase.utils.plugins import ExternalIOFormat
 import numpy as np
 
 import io
-
 import tempfile
 import atexit
 import errno
-import sys
 import os
 from pathlib import Path
+
+from mimyria.io_extxyz import install_extxyz_relabel_hook
 
 import importlib
 zstd_spec = importlib.util.find_spec('zstandard')
@@ -79,11 +79,16 @@ def _decompress_to_temp(path, opener):
 
 
 # Wrapper to open a compressed file
-def open_wrapper(path, mode='rt'):
+def open_wrapper(path,
+                 mode='rt',
+                 atom_relabel=None,
+                 atom_label_array="atom_label"):
     suffixes = [s.lower() for s in Path(path).suffixes]
     suffix = suffixes[-1]
 
     tmp_path = None
+
+    install_extxyz_relabel_hook()
 
     if suffix == ".xz":
         if not importlib.util.find_spec('lzma'):
@@ -139,6 +144,10 @@ def open_wrapper(path, mode='rt'):
     if ase_format == 'xyz':
         ase_format = 'extxyz'
     setattr(fh, 'ase_format', ase_format)
+
+    if atom_relabel is not None:
+        setattr(fh, 'atom_relabel', dict(atom_relabel))
+    setattr(fh, 'atom_label_array', atom_label_array)
 
     return fh
 
@@ -224,3 +233,4 @@ def write_polar(fd, frames, **kwargs):
         for f in alpha:
             fd.write(f'{f} ')
         fd.write('\n')
+

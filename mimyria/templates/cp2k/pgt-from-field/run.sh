@@ -21,7 +21,7 @@ mkdir "$dir"
 rsync -a --exclude='*.out' --exclude='*/' ./ $dir
 cd "$dir"
 
-ln -sf ../force_eval.inc 
+ln -sf ../../../force_eval.inc 
 
 sed -i "s/FIRST_SNAPSHOT.*/FIRST_SNAPSHOT ${i}/g" *.inp
 sed -i "s/LAST_SNAPSHOT.*/LAST_SNAPSHOT ${i}/g" *.inp
@@ -30,17 +30,19 @@ for f in run-*.inp
 do
   # NOTE: this needs to be adjusted for different systems
   outfn=${f%.inp}.out
-  ${MPIRUN} "${CP2K}" "${f}" >> "${outfn}"
+  ${MPIRUN} "${CP2K}" "${f}" > "${outfn}"
   ret=$?
 
   if [ $ret -ne 0 ]; then
     # the execution of CP2k failed, exit with error
+    echo 'RUNSCRIPT: Detected that CP2k failed, exiting'
     exit 1
   fi
 
-  grep 'SCF run NOT converged' ${outfn}        
+  grep 'SCF run NOT converged' ${outfn} &> /dev/null
   if [ $? -eq 0 ]; then
     # the SCF did not converge, exit with error
+    echo 'RUNSCRIPT: Detected that SCF did not converge, exiting'
     exit 2
   fi
 done

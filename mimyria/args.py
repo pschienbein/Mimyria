@@ -17,6 +17,40 @@ def target(parser, default=None):
                             help='Property to train or compare')
 
 
+def atom_relabel(parser, default=None):
+    parser.add_argument('--atom-relabel',
+                        metavar='OLD=NEW',
+                        nargs='+',
+                        default=None,
+                        help='Relabel atom names, e.g. Co2=Co or Fe2=Fe. '
+                             'NOTE: The ORIGINAL labels (Co2, Fe2, ...) '
+                             'will be used for training and prediction! This '
+                             'is just a way to provide element names for ase')
+
+
+def parse_atom_relabel(values):
+    if values is None:
+        return None
+
+    mapping = {}
+    for value in values:
+        try:
+            old, new = value.split('=', 1)
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                    f'Invalid relabel specification {value!r}; '
+                    'expected OLD=NEW')
+
+        if not old or not new:
+            raise argparse.ArgumentTypeError(
+                    f'Invalid relabel specification {value!r}; '
+                    'expected OLD=NEW')
+
+        mapping[old] = new
+
+    return mapping
+
+
 def cell(parser, required=True):
     parser.add_argument('--cell',
                         type=float,

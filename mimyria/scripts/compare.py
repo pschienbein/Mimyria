@@ -56,7 +56,11 @@ def main(argv=None):
         help='Transforms all tensors to their irreducible representation before comparison'
         )
 
+    common_args.atom_relabel(parser)
+
     args = parser.parse_args(argv)
+
+    atom_relabel = common_args.parse_atom_relabel(args.atom_relabel)
 
     if args.target == 'dipole':
         raise NotImplementedError
@@ -75,21 +79,13 @@ def main(argv=None):
 
     print(f'Comparing {target}', file=sys.stderr)
 
-    with open_wrapper(args.confA) as finA, open_wrapper(args.confB) as finB:
+    with open_wrapper(args.confA, atom_relabel=atom_relabel) as finA, \
+         open_wrapper(args.confB, atom_relabel=atom_relabel) as finB:
+
         iterA = iread(finA, format=getattr(finA, 'ase_format'))
         iterB = iread(finB, format=getattr(finB, 'ase_format'))
 
-        species_mses = defaultdict(list)
-        species_propB_ms = defaultdict(list)
-        species_num_outliers = defaultdict(int)
-        species_count = defaultdict(int)
         scatter = defaultdict(list)
-
-        component_se = dict()
-        component_count = defaultdict(int)
-
-        mses = []
-        dens = []
 
         tensorsA = defaultdict(list)
         tensorsB = defaultdict(list)
@@ -107,6 +103,13 @@ def main(argv=None):
             atoms_arrays_reshape(atomsA)
             atoms_arrays_reshape(atomsB)
 
+            labelsA = atomsA.arrays.get('atom_label', atomsA.get_chemical_symbols())
+            labelsB = atomsA.arrays.get('atom_label', atomsA.get_chemical_symbols())
+
+            if any(a != b for a, b in zip(labelsA, labelsB)):
+                print("# Atom labels differ between confA and confB!")
+                exit(1)
+
             # Irreps?
             if args.compare_irreps:
                 import torch
@@ -114,7 +117,7 @@ def main(argv=None):
                     # Lazy initialization...
                     from mimyria.models import model_from_target
                     from mimyria.models.parameters import get_default
-                    atom_kinds = set(atomsA.get_chemical_symbols())
+                    atom_kinds = set(labelsA)
                     param = get_default(args.target, atom_kinds=list(atom_kinds))
                     cmp_irreps_mdl = model_from_target(args.target, device='cpu', model_parameters=param)
 
@@ -145,7 +148,7 @@ def main(argv=None):
 
                 # print(mask_keep)
 
-            for i, symbol in enumerate(atomsA.get_chemical_symbols()):
+            for i, symbol in enumerate(labelsA):
                 tensorsA[symbol].append(propA[i])
                 tensorsB[symbol].append(propB[i])
 

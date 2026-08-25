@@ -4,6 +4,7 @@
 import datetime
 import argparse
 import time
+import sys
 
 import numpy as np
 import torch
@@ -41,6 +42,8 @@ def main(argv=None):
     parser.add_argument('--normalization', type=enum_type(EDataNormalization), choices=list(EDataNormalization), help='Architecture: Data normalization')
     parser.add_argument('--equal_num_features_per_channel', action=argparse.BooleanOptionalAction, default=False, help='Architecture: Change the number of features dynamically per l-value')
     parser.add_argument('--natural_parities_only', action=argparse.BooleanOptionalAction, default=False, help='Architecture: Only add natural parities in the hidden layers')
+    # provides atom_relabel for custom atom labels
+    common_args.atom_relabel(parser)
 
     mdl_param_default_keys = [
             'num_features',
@@ -68,6 +71,8 @@ def main(argv=None):
 
     ###############################################
 
+    atom_relabel = common_args.parse_atom_relabel(args.atom_relabel)
+
     if args.fix_seed:
         # fix the seed (train/test split)
         np.random.seed(0)
@@ -79,16 +84,18 @@ def main(argv=None):
     # print(cell)
 
     atom_kinds = set()
-    with open_wrapper(args.train) as fin:
+    with open_wrapper(args.train, atom_relabel=atom_relabel) as fin:
         tdata = read(fin, ':', format=getattr(fin, 'ase_format'))
         for atoms in tdata:
             if atoms.cell is None or atoms.cell.volume < 1e-8:
                 atoms.set_cell(cell_loader.get())
 
-            atom_kinds.update(atoms.get_chemical_symbols())
+            #labels = atoms.arrays.get('atom_label', atoms.get_chemical_symbols())
+            labels = atoms.get_chemical_symbols()
+            atom_kinds.update(labels)
 
     atom_kinds = sorted(atom_kinds)
-    print('Detected atom symbols: ', atom_kinds)
+    print('Detected atom symbols: ', atom_kinds, file=sys.stderr)
 
     # param = ModelParameters(atom_kinds=list(atom_kinds))
     param = get_default(args.target, atom_kinds=list(atom_kinds))

@@ -75,8 +75,8 @@ def main(argv=None):
         # Note:
         # 1) Unit of correlation function is e^2 A^2 / fs^2
         # 2) 1e23: conversion from A to cm and 1/fs to 1/s
-        num = args.timestep * np.pi * 1e23 * phys_const.e**2
-        den = 6 * args.volume * C0 * phys_const.epsilon_0 * phys_const.Boltzmann * args.temperature
+        num = args.timestep * 1e23 * phys_const.e**2
+        den = 2 * args.volume * C0 * phys_const.epsilon_0 * phys_const.Boltzmann * args.temperature
         aconv = num / den
 
         # INFO

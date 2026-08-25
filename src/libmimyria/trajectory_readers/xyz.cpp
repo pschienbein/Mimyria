@@ -160,8 +160,8 @@ public:
                             case ReadInstruction::APT:
                                 for(size_t j = 0; j < 3; ++j)
                                 {
-                                    for(size_t k = 0; k < 3; ++k)
-                                        iss_line >> pFrame->m_mAPT[iAtom](k,j);
+                                    for(size_t x = 0; x < 3; ++x)
+                                        iss_line >> pFrame->m_mAPT[iAtom](j,x);
                                 }
                                 break;
 
@@ -171,7 +171,7 @@ public:
                                     for(size_t k = 0; k < 3; ++k)
                                     {
                                         for(size_t x = 0; x < 3; ++x)
-                                            iss_line >> (*pFrame->m_mPGT)[iAtom][x](j, k);
+                                            iss_line >> (*pFrame->m_mPGT)[iAtom][x](j,k);
                                     }
                                 }
                                 break;

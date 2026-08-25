@@ -6,6 +6,7 @@ from mimyria.git_info import git_info_string
 
 PKG = "mimyria.scripts"
 
+
 def available_commands():
     try:
         pkg = importlib.import_module(PKG)
@@ -22,7 +23,8 @@ def available_commands():
             mod = importlib.import_module(f"{PKG}.{name}")
             if hasattr(mod, "main"):
                 cmds.append(name)
-        except Exception:
+        except Exception as e:
+            print(f'Cannot load {name}, Error: {e}')
             pass
 
     return sorted(cmds)
